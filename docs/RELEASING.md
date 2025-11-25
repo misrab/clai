@@ -135,7 +135,17 @@ Follow semantic versioning (semver):
 
 **Build fails**: Run `make test` and `make build` first to ensure everything compiles correctly.
 
-## Advanced: Homebrew Distribution
+## Homebrew Distribution
 
-To distribute via Homebrew, uncomment the `brews:` section in `.goreleaser.yaml` and create a tap repository at `github.com/misrab/homebrew-tap`.
+Homebrew distribution is enabled! On your next release, GoReleaser will automatically:
+- Create the `misrab/homebrew-tap` repository (if it doesn't exist)
+- Publish the Homebrew formula
+
+Your friends will then be able to install with:
+
+```bash
+brew install misrab/tap/clai
+```
+
+**Note**: Make sure your `GITHUB_TOKEN` has permission to create repositories. If needed, create a new token at https://github.com/settings/tokens/new with `repo` scope.
 

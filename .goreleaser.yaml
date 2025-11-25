@@ -58,18 +58,17 @@ changelog:
       - Merge pull request
       - Merge branch
 
-# Optional: Homebrew tap for easy installation
-# Uncomment and configure if you want to distribute via Homebrew
-# brews:
-#   - name: clai
-#     repository:
-#       owner: misrab
-#       name: homebrew-tap
-#     homepage: https://github.com/misrab/clai
-#     description: "CLI AI assistant tool"
-#     license: "MIT"
-#     install: |
-#       bin.install "clai"
+# Homebrew tap for easy installation
+brews:
+  - name: clai
+    repository:
+      owner: misrab
+      name: homebrew-tap
+    homepage: https://github.com/misrab/clai
+    description: "CLI AI assistant tool"
+    license: "MIT"
+    install: |
+      bin.install "clai"
 
 # Optional: Docker images
 # dockers:
