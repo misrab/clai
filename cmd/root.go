@@ -10,11 +10,14 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/chzyer/readline"
+	"github.com/misrab/clai/internal/ai"
 	"github.com/spf13/cobra"
 )
 
 var (
 	replMode bool
+	aiModel  string
+	useDummy bool
 
 	rootCmd = &cobra.Command{
 		Use:   "clai [prompt]",
@@ -38,6 +41,8 @@ var (
 
 func init() {
 	rootCmd.Flags().BoolVar(&replMode, "repl", false, "Start in REPL (interactive) mode")
+	rootCmd.Flags().StringVar(&aiModel, "model", "codellama:7b", "Ollama model to use")
+	rootCmd.Flags().BoolVar(&useDummy, "dummy", false, "Use dummy AI (no Ollama required)")
 	rootCmd.AddCommand(versionCmd)
 }
 
@@ -55,7 +60,10 @@ func formatCommand(cmd string) string {
 
 // handleSinglePrompt processes a single prompt in primary mode
 func handleSinglePrompt(prompt string) error {
-	command := generateCommand(prompt)
+	command, err := generateCommand(prompt)
+	if err != nil {
+		return err
+	}
 
 	fmt.Printf("\nGenerated command:\n")
 	fmt.Printf("  %s\n\n", formatCommand(command))
@@ -86,7 +94,11 @@ func runREPL() error {
 			break
 		}
 
-		command := generateCommand(prompt)
+		command, err := generateCommand(prompt)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			continue
+		}
 		fmt.Printf("Generated: %s\n", formatCommand(command))
 
 		if err := promptAndExecute(command); err != nil {
@@ -172,9 +184,22 @@ func executeCommand(command string) error {
 	return nil
 }
 
-// generateCommand is a dummy AI that generates shell commands
-// TODO: Replace with actual AI integration
-func generateCommand(prompt string) string {
+// generateCommand generates a shell command using AI or dummy mode
+func generateCommand(prompt string) (string, error) {
+	if useDummy {
+		return generateDummyCommand(prompt), nil
+	}
+
+	client := ai.NewClient(aiModel)
+	cmd, err := client.GenerateCommand(prompt)
+	if err != nil {
+		return "", err
+	}
+	return cmd, nil
+}
+
+// generateDummyCommand is a simple pattern-based command generator
+func generateDummyCommand(prompt string) string {
 	prompt = strings.ToLower(prompt)
 
 	// Simple pattern matching for demo purposes

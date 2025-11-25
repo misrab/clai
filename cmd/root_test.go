@@ -3,8 +3,6 @@ package cmd
 import "testing"
 
 func TestGenerateCommand(t *testing.T) {
-	t.Parallel()
-
 	tests := []struct {
 		name     string
 		prompt   string
@@ -32,8 +30,9 @@ func TestGenerateCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			if got := generateCommand(tt.prompt); got != tt.expected {
-				t.Fatalf("generateCommand(%q) = %q, want %q", tt.prompt, got, tt.expected)
+			got := generateDummyCommand(tt.prompt)
+			if got != tt.expected {
+				t.Fatalf("generateDummyCommand(%q) = %q, want %q", tt.prompt, got, tt.expected)
 			}
 		})
 	}
