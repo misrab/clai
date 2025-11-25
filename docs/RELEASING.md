@@ -17,13 +17,16 @@ This guide explains how to create releases for clai using GoReleaser.
    ```bash
    # Create a GitHub token with repo permissions at:
    # https://github.com/settings/tokens/new
-   
-   # Export it in your shell:
-   export GITHUB_TOKEN="your_github_token_here"
-   
-   # Or add to your ~/.zshrc or ~/.bashrc:
-   echo 'export GITHUB_TOKEN="your_github_token_here"' >> ~/.zshrc
    ```
+
+   Create `.env.release` (already gitignored) at the repo root:
+   ```bash
+   cat <<'EOF' > .env.release
+   GITHUB_TOKEN=ghp_yourtokenhere
+   EOF
+   ```
+
+   Every release-related `make` target will automatically source this file and export the variables it defines (no need to add `export`). Keep the file private—never commit it.
 
 ## Release Process
 
@@ -49,22 +52,38 @@ This creates binaries in the `dist/` folder that you can share directly with fri
 
 ### 3. Create a Production Release
 
-When you're ready to create an official release:
+Pick the command that matches the bump you want:
 
 ```bash
-# 1. Make sure all changes are committed
-git add .
-git commit -m "Prepare for release"
+# Patch bump (v1.2.3 -> v1.2.4)
+make release-patch
 
-# 2. Create and push a version tag
-git tag -a v1.0.0 -m "Release v1.0.0"
-git push origin v1.0.0
+# Minor bump (v1.2.3 -> v1.3.0)
+make release-minor
 
-# 3. Run the release
-make release
+# Major bump (v1.2.3 -> v2.0.0)
+make release-major
+
+# Use an exact version
+make release-version VERSION=v1.4.0
 ```
 
-This will:
+Each command will:
+
+- Ensure the git working tree is clean.
+- Auto-create the git tag (annotated).
+- Run GoReleaser against that tag.
+- Leave the release artifacts in `dist/`.
+
+Once the command finishes:
+
+```bash
+git push origin <the-new-tag>
+```
+
+Need to use a tag that already exists? Create/tag/push manually, then run `make release`.
+
+Every full release will:
 - Build binaries for Linux, macOS, and Windows (both amd64 and arm64)
 - Create archives (.tar.gz for Linux/macOS, .zip for Windows)
 - Generate checksums
@@ -73,30 +92,29 @@ This will:
 
 ## Quick Distribution to Friends
 
-### Option 1: Snapshot Release (Easiest)
+### Option 1: Quick Share (No GitHub Release)
 
-```bash
-# Create snapshot builds
-make release-snapshot
+1. Run `make release-snapshot`.
+2. Zip the binary your friend needs from `dist/` (for example `dist/clai_darwin_arm64/clai`).
+3. Tell them to drop the binary somewhere on their `$PATH` (e.g. `/usr/local/bin`) and run `chmod +x clai` once.
 
-# Share the binaries from dist/ folder
-# For example, for macOS ARM64:
-# dist/clai_darwin_arm64/clai
-```
+This is the fastest way to hand someone a working build.
 
-### Option 2: GitHub Release
+### Option 2: GitHub Release Download
 
-After running `make release`, your friends can download from:
-```
-https://github.com/misrab/clai/releases
-```
+1. Run `make release` (requires a tag + `GITHUB_TOKEN`).
+2. Share the link `https://github.com/misrab/clai/releases`.
+3. Friends download the archive that matches their OS/arch, unzip, move `clai` to their `$PATH`, run `chmod +x clai`.
 
-### Option 3: Direct Install via Go
+### Option 3: `go install`
 
-Once released, friends with Go installed can run:
+If they already have Go installed:
+
 ```bash
 go install github.com/misrab/clai@latest
 ```
+
+The `clai` binary lands in `$GOPATH/bin` (or `~/go/bin` by default). Have them ensure that directory is on their `$PATH`.
 
 ## File Locations
 
