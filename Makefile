@@ -54,8 +54,8 @@ release-patch: ensure-clean
 	echo "Auto bump patch: $$TAG"; \
 	git tag -a $$TAG -m "Release $$TAG"; \
 	if { $(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; }; then \
-		git push origin $$TAG; \
-		echo "Release $$TAG complete and pushed to origin."; \
+		git push origin $$TAG 2>/dev/null || echo "Tag $$TAG already exists on remote (GoReleaser created it)"; \
+		echo "Release $$TAG complete."; \
 		echo "View release at https://github.com/misrab/clai/releases/tag/$$TAG"; \
 	else \
 		echo "GoReleaser failed; deleting tag $$TAG"; \
@@ -68,8 +68,8 @@ release-minor: ensure-clean
 	echo "Auto bump minor: $$TAG"; \
 	git tag -a $$TAG -m "Release $$TAG"; \
 	if { $(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; }; then \
-		git push origin $$TAG; \
-		echo "Release $$TAG complete and pushed to origin."; \
+		git push origin $$TAG 2>/dev/null || echo "Tag $$TAG already exists on remote (GoReleaser created it)"; \
+		echo "Release $$TAG complete."; \
 		echo "View release at https://github.com/misrab/clai/releases/tag/$$TAG"; \
 	else \
 		echo "GoReleaser failed; deleting tag $$TAG"; \
@@ -82,8 +82,8 @@ release-major: ensure-clean
 	echo "Auto bump major: $$TAG"; \
 	git tag -a $$TAG -m "Release $$TAG"; \
 	if { $(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; }; then \
-		git push origin $$TAG; \
-		echo "Release $$TAG complete and pushed to origin."; \
+		git push origin $$TAG 2>/dev/null || echo "Tag $$TAG already exists on remote (GoReleaser created it)"; \
+		echo "Release $$TAG complete."; \
 		echo "View release at https://github.com/misrab/clai/releases/tag/$$TAG"; \
 	else \
 		echo "GoReleaser failed; deleting tag $$TAG"; \
@@ -99,8 +99,8 @@ endif
 	echo "Releasing explicit version: $$TAG"; \
 	git tag -a $$TAG -m "Release $$TAG"; \
 	if { $(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; }; then \
-		git push origin $$TAG; \
-		echo "Release $$TAG complete and pushed to origin."; \
+		git push origin $$TAG 2>/dev/null || echo "Tag $$TAG already exists on remote (GoReleaser created it)"; \
+		echo "Release $$TAG complete."; \
 		echo "View release at https://github.com/misrab/clai/releases/tag/$$TAG"; \
 	else \
 		echo "GoReleaser failed; deleting tag $$TAG"; \
