@@ -2,20 +2,38 @@ package cmd
 
 import "testing"
 
-func TestGreet(t *testing.T) {
+func TestGenerateCommand(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
-		input    string
+		prompt   string
 		expected string
 	}{
-		{"default", "", "Hello, world!"},
-		{"custom name", "Mira", "Hello, Mira!"},
+		{
+			name:     "copy txt files",
+			prompt:   "copy the .txt files over",
+			expected: "cp *.txt /tmp/backup/",
+		},
+		{
+			name:     "disk usage",
+			prompt:   "show me disk usage",
+			expected: "df -h",
+		},
+		{
+			name:     "fallback",
+			prompt:   "do something else",
+			expected: "echo 'Dummy command for: do something else'",
+		},
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if got := greet(tt.input); got != tt.expected {
-				t.Fatalf("greet(%q) = %q, want %q", tt.input, got, tt.expected)
+			t.Parallel()
+
+			if got := generateCommand(tt.prompt); got != tt.expected {
+				t.Fatalf("generateCommand(%q) = %q, want %q", tt.prompt, got, tt.expected)
 			}
 		})
 	}
