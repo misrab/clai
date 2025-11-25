@@ -61,7 +61,9 @@ changelog:
       - Merge branch
 
 # Homebrew formula for easy installation
-homebrew:
+# Note: 'brews' shows a deprecation warning but is still the correct field for CLI tools
+# The 'homebrew' field doesn't exist yet in GoReleaser v2.12.7
+brews:
   - name: clai
     repository:
       owner: misrab
