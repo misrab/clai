@@ -1,0 +1,113 @@
+# GoReleaser configuration for clai
+# See https://goreleaser.com for documentation
+
+version: 2
+
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    # Skip building for incompatible combinations
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/misrab/clai/internal/version.Version={{.Version}}
+      - -X github.com/misrab/clai/internal/version.Commit={{.Commit}}
+      - -X github.com/misrab/clai/internal/version.Date={{.Date}}
+    binary: clai
+
+archives:
+  - format: tar.gz
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - '^style:'
+      - Merge pull request
+      - Merge branch
+
+# Optional: Homebrew tap for easy installation
+# Uncomment and configure if you want to distribute via Homebrew
+# brews:
+#   - name: clai
+#     repository:
+#       owner: misrab
+#       name: homebrew-tap
+#     homepage: https://github.com/misrab/clai
+#     description: "CLI AI assistant tool"
+#     license: "MIT"
+#     install: |
+#       bin.install "clai"
+
+# Optional: Docker images
+# dockers:
+#   - image_templates:
+#       - "ghcr.io/misrab/clai:{{ .Tag }}"
+#       - "ghcr.io/misrab/clai:latest"
+#     dockerfile: Dockerfile
+#     build_flag_templates:
+#       - "--label=org.opencontainers.image.created={{.Date}}"
+#       - "--label=org.opencontainers.image.title={{.ProjectName}}"
+#       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+#       - "--label=org.opencontainers.image.version={{.Version}}"
+
+# Release settings
+release:
+  github:
+    owner: misrab
+    name: clai
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## clai {{ .Tag }}
+    
+    Welcome to this release of clai!
+  footer: |
+    ## Installation
+    
+    ### Binary Download
+    Download the appropriate binary for your platform from the assets below.
+    
+    ### Homebrew (macOS/Linux)
+    ```bash
+    brew install misrab/tap/clai
+    ```
+    
+    ### Go Install
+    ```bash
+    go install github.com/misrab/clai@{{ .Tag }}
+    ```
+
