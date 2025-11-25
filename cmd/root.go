@@ -3,11 +3,13 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/atotto/clipboard"
+	"github.com/chzyer/readline"
 	"github.com/spf13/cobra"
 )
 
@@ -46,12 +48,17 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
+// formatCommand returns the command with cyan coloring
+func formatCommand(cmd string) string {
+	return fmt.Sprintf("\033[36m%s\033[0m", cmd)
+}
+
 // handleSinglePrompt processes a single prompt in primary mode
 func handleSinglePrompt(prompt string) error {
 	command := generateCommand(prompt)
 
 	fmt.Printf("\nGenerated command:\n")
-	fmt.Printf("  \033[36m%s\033[0m\n\n", command)
+	fmt.Printf("  %s\n\n", formatCommand(command))
 
 	return promptAndExecute(command)
 }
@@ -80,7 +87,7 @@ func runREPL() error {
 		}
 
 		command := generateCommand(prompt)
-		fmt.Printf("Generated: \033[36m%s\033[0m\n", command)
+		fmt.Printf("Generated: %s\n", formatCommand(command))
 
 		if err := promptAndExecute(command); err != nil {
 			fmt.Printf("Error: %v\n", err)
@@ -94,32 +101,57 @@ func runREPL() error {
 func promptAndExecute(command string) error {
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Print("Execute? [Y/n/e/c] ")
-	response, err := reader.ReadString('\n')
-	if err != nil {
-		return err
-	}
-
-	response = strings.ToLower(strings.TrimSpace(response))
-
-	switch response {
-	case "", "y", "yes":
-		return executeCommand(command)
-	case "n", "no":
-		fmt.Println("Cancelled")
-		return nil
-	case "e", "edit":
-		fmt.Println("(Edit mode not yet implemented)")
-		return nil
-	case "c", "copy":
-		if err := clipboard.WriteAll(command); err != nil {
-			return fmt.Errorf("copy failed: %w", err)
+	for {
+		fmt.Print("Execute? [Y/n/e/c] ")
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			return err
 		}
-		fmt.Println("Copied to clipboard")
-		return nil
-	default:
-		fmt.Println("Invalid option, cancelled")
-		return nil
+
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		switch response {
+		case "", "y", "yes":
+			return executeCommand(command)
+		case "n", "no":
+			fmt.Println("Cancelled")
+			return nil
+		case "e", "edit":
+			rl, err := readline.NewEx(&readline.Config{
+				Prompt:                 "Edit: ",
+				InterruptPrompt:        "^C",
+				HistoryLimit:           0,
+				DisableAutoSaveHistory: true,
+			})
+			if err != nil {
+				return err
+			}
+			// Prefill with current command
+			rl.WriteStdin([]byte(command))
+			edited, err := rl.Readline()
+			rl.Close()
+			if err != nil {
+				if err == io.EOF || err == readline.ErrInterrupt {
+					fmt.Println("Cancelled")
+					return nil
+				}
+				return err
+			}
+			edited = strings.TrimSpace(edited)
+			if edited != "" {
+				command = edited
+			}
+			continue
+		case "c", "copy":
+			if err := clipboard.WriteAll(command); err != nil {
+				return fmt.Errorf("copy failed: %w", err)
+			}
+			fmt.Println("Copied to clipboard")
+			return nil
+		default:
+			fmt.Println("Invalid option, cancelled")
+			return nil
+		}
 	}
 }
 

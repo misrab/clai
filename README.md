@@ -43,8 +43,8 @@ Execute? [Y/n/e/c]
 Options:
 - `Y` - Yes, execute the command
 - `n` - No, cancel
-- `e` - Edit command first (coming soon)
-- `c` - Copy to clipboard (coming soon)
+- `e` - Edit the command inline before running
+- `c` - Copy to clipboard
 
 ### REPL Mode (Interactive)
 
