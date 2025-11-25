@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
 )
 
@@ -111,8 +112,10 @@ func promptAndExecute(command string) error {
 		fmt.Println("(Edit mode not yet implemented)")
 		return nil
 	case "c", "copy":
-		fmt.Println("(Copy to clipboard not yet implemented)")
-		fmt.Printf("Command: %s\n", command)
+		if err := clipboard.WriteAll(command); err != nil {
+			return fmt.Errorf("copy failed: %w", err)
+		}
+		fmt.Println("Copied to clipboard")
 		return nil
 	default:
 		fmt.Println("Invalid option, cancelled")
