@@ -149,3 +149,10 @@ clai version
 - AI features require Ollama to be running (`ollama serve`)
 - Use `--dummy` flag to test without Ollama
 - Models are cached locally by Ollama after first download
+
+
+## Release
+
+`make release-patch` etc
+
+users can `brew install misrab/tap/clai`
