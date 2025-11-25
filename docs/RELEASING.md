@@ -127,6 +127,8 @@ Follow semantic versioning (semver):
 - `v1.1.0` - Minor release (new features)
 - `v1.0.1` - Patch release (bug fixes)
 
+**Note**: GoReleaser automatically injects version info into the binary at build time. Local builds will show `0.0.0-dev`, while released binaries will display the actual version tag.
+
 ## Troubleshooting
 
 **"git tag not found"**: Make sure you've created and pushed a git tag before running `make release`.
