@@ -32,11 +32,13 @@ builds:
     binary: clai
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     # use zip for windows archives
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     files:
       - LICENSE
       - README.md
@@ -58,8 +60,8 @@ changelog:
       - Merge pull request
       - Merge branch
 
-# Homebrew tap for easy installation
-brews:
+# Homebrew formula for easy installation
+homebrew:
   - name: clai
     repository:
       owner: misrab
