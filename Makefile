@@ -53,22 +53,43 @@ release-patch: ensure-clean
 	@TAG=$$($(NEXT_TAG_SCRIPT) patch); \
 	echo "Auto bump patch: $$TAG"; \
 	git tag -a $$TAG -m "Release $$TAG"; \
-	$(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; \
-	echo "Release $$TAG complete. Push with: git push origin $$TAG"
+	if { $(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; }; then \
+		git push origin $$TAG; \
+		echo "Release $$TAG complete and pushed to origin."; \
+		echo "View release at https://github.com/misrab/clai/releases/tag/$$TAG"; \
+	else \
+		echo "GoReleaser failed; deleting tag $$TAG"; \
+		git tag -d $$TAG >/dev/null 2>&1 || true; \
+		exit 1; \
+	fi
 
 release-minor: ensure-clean
 	@TAG=$$($(NEXT_TAG_SCRIPT) minor); \
 	echo "Auto bump minor: $$TAG"; \
 	git tag -a $$TAG -m "Release $$TAG"; \
-	$(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; \
-	echo "Release $$TAG complete. Push with: git push origin $$TAG"
+	if { $(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; }; then \
+		git push origin $$TAG; \
+		echo "Release $$TAG complete and pushed to origin."; \
+		echo "View release at https://github.com/misrab/clai/releases/tag/$$TAG"; \
+	else \
+		echo "GoReleaser failed; deleting tag $$TAG"; \
+		git tag -d $$TAG >/dev/null 2>&1 || true; \
+		exit 1; \
+	fi
 
 release-major: ensure-clean
 	@TAG=$$($(NEXT_TAG_SCRIPT) major); \
 	echo "Auto bump major: $$TAG"; \
 	git tag -a $$TAG -m "Release $$TAG"; \
-	$(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; \
-	echo "Release $$TAG complete. Push with: git push origin $$TAG"
+	if { $(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; }; then \
+		git push origin $$TAG; \
+		echo "Release $$TAG complete and pushed to origin."; \
+		echo "View release at https://github.com/misrab/clai/releases/tag/$$TAG"; \
+	else \
+		echo "GoReleaser failed; deleting tag $$TAG"; \
+		git tag -d $$TAG >/dev/null 2>&1 || true; \
+		exit 1; \
+	fi
 
 release-version: ensure-clean
 ifndef VERSION
@@ -77,8 +98,15 @@ endif
 	@TAG=$$($(NEXT_TAG_SCRIPT) version $(VERSION)); \
 	echo "Releasing explicit version: $$TAG"; \
 	git tag -a $$TAG -m "Release $$TAG"; \
-	$(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; \
-	echo "Release $$TAG complete. Push with: git push origin $$TAG"
+	if { $(LOAD_RELEASE_ENV) $(GORELEASER) release --clean; }; then \
+		git push origin $$TAG; \
+		echo "Release $$TAG complete and pushed to origin."; \
+		echo "View release at https://github.com/misrab/clai/releases/tag/$$TAG"; \
+	else \
+		echo "GoReleaser failed; deleting tag $$TAG"; \
+		git tag -d $$TAG >/dev/null 2>&1 || true; \
+		exit 1; \
+	fi
 
 ensure-clean:
 	@if ! git diff --quiet; then \

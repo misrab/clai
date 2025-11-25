@@ -73,13 +73,9 @@ Each command will:
 - Ensure the git working tree is clean.
 - Auto-create the git tag (annotated).
 - Run GoReleaser against that tag.
+- Push the tag to `origin` once the release succeeds.
+- Remove the local tag again if GoReleaser fails, so you can retry cleanly.
 - Leave the release artifacts in `dist/`.
-
-Once the command finishes:
-
-```bash
-git push origin <the-new-tag>
-```
 
 Need to use a tag that already exists? Create/tag/push manually, then run `make release`.
 
