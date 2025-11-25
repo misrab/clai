@@ -1,4 +1,4 @@
-.PHONY: test build run clean
+.PHONY: test build run clean install
 
 test:
 	go test ./...
@@ -9,6 +9,9 @@ build:
 
 run: build
 	./bin/clai $(ARGS)
+
+install:
+	go install .
 
 clean:
 	rm -f bin/clai

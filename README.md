@@ -24,6 +24,20 @@ make run ARGS="--name Ada"
 make run ARGS="version"
 ```
 
+## Installation
+
+Install `clai` locally to use it anywhere:
+
+```bash
+make install
+```
+
+Ensure `$HOME/go/bin` is in your PATH. Add to `~/.zshrc` if needed:
+
+```bash
+export PATH="$HOME/go/bin:$PATH"
+```
+
 ## Usage
 
 ```bash
