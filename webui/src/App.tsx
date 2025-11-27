@@ -1,10 +1,25 @@
 import { useState } from 'react'
 import { MessageSquare } from 'lucide-react'
+import { useTabs } from './hooks/useTabs'
+import { TabBar } from './components/TabBar'
+import { ChatInterface } from './components/ChatInterface'
 import './App.css'
 
 function App() {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(true)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
+
+  const {
+    tabs,
+    activeTab,
+    activeTabId,
+    setActiveTabId,
+    addTab,
+    closeTab,
+    updateTabTitle,
+    updateTabInput,
+    sendMessage
+  } = useTabs()
 
   return (
     <div className="app">
@@ -56,8 +71,26 @@ function App() {
           </button>
           <div className="app-title">clai</div>
         </header>
+
+        {/* Tab bar */}
+        <TabBar
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onTabSelect={setActiveTabId}
+          onTabClose={closeTab}
+          onTabRename={updateTabTitle}
+          onNewTab={addTab}
+        />
+
+        {/* Chat interface */}
         <div className="content">
-          {/* Chats page content will go here */}
+          {activeTab && (
+            <ChatInterface
+              tab={activeTab}
+              onInputChange={(input) => updateTabInput(activeTab.id, input)}
+              onSend={() => sendMessage(activeTab.id)}
+            />
+          )}
         </div>
       </div>
     </div>
