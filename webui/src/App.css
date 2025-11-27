@@ -48,7 +48,9 @@ body {
   border: none;
   color: #999;
   cursor: pointer;
-  padding: 1rem;
+  /* Match overall height of the top header so the nav below
+     lines up with the chat tabs on the right side */
+  padding: 0.5rem 1rem;
   align-self: flex-end;
   display: flex;
   align-items: center;
@@ -379,21 +381,54 @@ body {
   .mobile-close-btn {
     display: block;
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.75rem;
+    right: 0.75rem;
     background: none;
     border: none;
     color: #999;
-    font-size: 2rem;
+    font-size: 1.75rem;
     cursor: pointer;
-    padding: 0;
-    width: 32px;
-    height: 32px;
+    padding: 0.25rem;
+    width: 40px;
+    height: 40px;
     line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .mobile-close-btn:hover {
     color: white;
+  }
+
+  /* Reset nav to default spacing on mobile */
+  .sidebar nav {
+    padding: 0.5rem;
+    padding-top: 3.5rem;
+  }
+
+  /* Ensure nav items display properly on mobile */
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Show icon on mobile */
+  .nav-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  /* Always show label on mobile */
+  .nav-label {
+    opacity: 1 !important;
+    display: inline;
+  }
+
+  .sidebar.collapsed .nav-label {
+    opacity: 1 !important;
   }
 
   .main {
@@ -402,7 +437,9 @@ body {
   }
 
   .mobile-menu-btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #1a1a1a;
     border: 1px solid #333;
     color: white;
@@ -410,6 +447,7 @@ body {
     font-size: 1.5rem;
     cursor: pointer;
     border-radius: 6px;
+    line-height: 1;
   }
 
   .mobile-menu-btn:hover {
@@ -430,15 +468,6 @@ body {
     bottom: 0;
     background: rgba(0, 0, 0, 0.7);
     z-index: 50;
-  }
-
-  /* On mobile, keep labels visible and hide the icon-only collapsed state */
-  .sidebar.collapsed .nav-label {
-    opacity: 1;
-  }
-
-  .nav-icon {
-    display: none;
   }
 
   .messages {

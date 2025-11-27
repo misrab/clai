@@ -8,10 +8,19 @@ import (
 	"os/exec"
 	"runtime"
 	"time"
+
+	"github.com/misrab/clai/internal/storage"
 )
 
 // Start starts the web UI server with the provided embedded filesystem
 func Start(distFiles embed.FS, port int, openBrowser bool) error {
+	// Initialize storage
+	store, err := storage.NewStore()
+	if err != nil {
+		return fmt.Errorf("failed to initialize storage: %w", err)
+	}
+	defer store.Close()
+
 	// Get the dist subdirectory from embedded files
 	distFS, err := fs.Sub(distFiles, "webui/dist")
 	if err != nil {
@@ -20,6 +29,8 @@ func Start(distFiles embed.FS, port int, openBrowser bool) error {
 
 	// Register API endpoints
 	http.HandleFunc("/api/chat", HandleChat)
+	http.HandleFunc("/api/chats", chatHandler(store))
+	http.HandleFunc("/api/chats/", chatHandler(store))
 
 	// Serve embedded files
 	http.Handle("/", http.FileServer(http.FS(distFS)))

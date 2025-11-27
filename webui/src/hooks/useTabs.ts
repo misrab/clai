@@ -1,48 +1,135 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChatTab, Message } from '../types'
 import { generateId } from '../utils'
+import { api } from '../api'
 
 export function useTabs() {
-  const [tabs, setTabs] = useState<ChatTab[]>([
-    {
-      id: generateId(),
-      title: 'New Chat',
-      messages: [],
-      input: ''
-    }
-  ])
-  const [activeTabId, setActiveTabId] = useState(tabs[0].id)
+  const [tabs, setTabs] = useState<ChatTab[]>([])
+  const [activeTabId, setActiveTabId] = useState<string>('')
+  const [loading, setLoading] = useState(true)
 
-  const addTab = () => {
-    const newTab: ChatTab = {
-      id: generateId(),
-      title: 'New Chat',
-      messages: [],
-      input: ''
+  // Load chats from API on mount
+  useEffect(() => {
+    loadChats()
+  }, [])
+
+  const loadChats = async () => {
+    try {
+      const chatList = await api.listChats()
+      
+      if (chatList.length === 0) {
+        // Create initial chat if none exist
+        const newId = generateId()
+        await api.createChat(newId, 'New Chat')
+        setTabs([{
+          id: newId,
+          title: 'New Chat',
+          messages: [],
+          input: ''
+        }])
+        setActiveTabId(newId)
+      } else {
+        // Load existing chats (without messages initially)
+        const loadedTabs: ChatTab[] = chatList.map(chat => ({
+          id: chat.id,
+          title: chat.title,
+          messages: [], // Will be loaded when tab is activated
+          input: ''
+        }))
+        setTabs(loadedTabs)
+        setActiveTabId(loadedTabs[0].id)
+        
+        // Load messages for the first tab
+        loadChatMessages(loadedTabs[0].id)
+      }
+    } catch (error) {
+      console.error('Failed to load chats:', error)
+      // Fallback to a default chat
+      const newId = generateId()
+      setTabs([{
+        id: newId,
+        title: 'New Chat',
+        messages: [],
+        input: ''
+      }])
+      setActiveTabId(newId)
+    } finally {
+      setLoading(false)
     }
-    setTabs([...tabs, newTab])
-    setActiveTabId(newTab.id)
   }
 
-  const updateTabTitle = (tabId: string, title: string) => {
-    setTabs(prevTabs => prevTabs.map(tab =>
-      tab.id === tabId ? { ...tab, title } : tab
-    ))
+  const loadChatMessages = async (chatId: string) => {
+    try {
+      const chat = await api.getChat(chatId)
+      setTabs(prevTabs => prevTabs.map(tab =>
+        tab.id === chatId
+          ? { ...tab, messages: chat.messages }
+          : tab
+      ))
+    } catch (error) {
+      console.error('Failed to load chat messages:', error)
+    }
   }
 
-  const closeTab = (tabId: string) => {
+  // Load messages when switching tabs
+  useEffect(() => {
+    if (activeTabId) {
+      const activeTab = tabs.find(t => t.id === activeTabId)
+      if (activeTab && activeTab.messages.length === 0) {
+        loadChatMessages(activeTabId)
+      }
+    }
+  }, [activeTabId])
+
+  const addTab = async () => {
+    const newId = generateId()
+    const title = 'New Chat'
+    
+    try {
+      await api.createChat(newId, title)
+      const newTab: ChatTab = {
+        id: newId,
+        title,
+        messages: [],
+        input: ''
+      }
+      setTabs([...tabs, newTab])
+      setActiveTabId(newId)
+    } catch (error) {
+      console.error('Failed to create chat:', error)
+    }
+  }
+
+  const updateTabTitle = async (tabId: string, title: string) => {
+    try {
+      await api.updateChatTitle(tabId, title)
+      setTabs(prevTabs => prevTabs.map(tab =>
+        tab.id === tabId ? { ...tab, title } : tab
+      ))
+    } catch (error) {
+      console.error('Failed to update chat title:', error)
+    }
+  }
+
+  const closeTab = async (tabId: string) => {
     if (tabs.length === 1) return // Keep at least one tab
     
-    setTabs(prevTabs => {
-      const newTabs = prevTabs.filter(tab => tab.id !== tabId)
+    try {
+      await api.deleteChat(tabId)
       
-      // If closing active tab, switch to another
-      if (tabId === activeTabId) {
-        setActiveTabId(newTabs[0].id)
-      }
-      
-      return newTabs
-    })
+      setTabs(prevTabs => {
+        const newTabs = prevTabs.filter(tab => tab.id !== tabId)
+        
+        // If closing active tab, switch to another
+        if (tabId === activeTabId) {
+          setActiveTabId(newTabs[0].id)
+        }
+        
+        return newTabs
+      })
+    } catch (error) {
+      console.error('Failed to delete chat:', error)
+    }
   }
 
   const updateTabInput = (tabId: string, input: string) => {
@@ -59,7 +146,7 @@ export function useTabs() {
     ))
   }
 
-  const sendMessage = (tabId: string) => {
+  const sendMessage = async (tabId: string) => {
     const tab = tabs.find(t => t.id === tabId)
     if (!tab || !tab.input.trim()) return
 
@@ -69,7 +156,7 @@ export function useTabs() {
       content: tab.input
     }
 
-    // Add user message and clear input
+    // Add user message to local state and clear input
     setTabs(prevTabs => prevTabs.map(t => 
       t.id === tabId 
         ? { 
@@ -80,16 +167,32 @@ export function useTabs() {
         : t
     ))
 
-    // TODO: Call AI API and add assistant response
-    // For now, just simulate a response
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: generateId(),
-        role: 'assistant',
-        content: 'This is a simulated response. AI integration coming soon!'
-      }
-      addMessage(tabId, assistantMessage)
-    }, 500)
+    try {
+      // Save user message to backend
+      await api.createMessage(tabId, userMessage)
+
+      // TODO: Call AI API and add assistant response
+      // For now, just simulate a response
+      setTimeout(async () => {
+        const assistantMessage: Message = {
+          id: generateId(),
+          role: 'assistant',
+          content: 'This is a simulated response. AI integration coming soon!'
+        }
+        
+        // Add to local state
+        addMessage(tabId, assistantMessage)
+        
+        // Save to backend
+        try {
+          await api.createMessage(tabId, assistantMessage)
+        } catch (error) {
+          console.error('Failed to save assistant message:', error)
+        }
+      }, 500)
+    } catch (error) {
+      console.error('Failed to save user message:', error)
+    }
   }
 
   const activeTab = tabs.find(tab => tab.id === activeTabId)
@@ -103,7 +206,8 @@ export function useTabs() {
     closeTab,
     updateTabTitle,
     updateTabInput,
-    sendMessage
+    sendMessage,
+    loading
   }
 }
 

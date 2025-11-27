@@ -18,8 +18,17 @@ function App() {
     closeTab,
     updateTabTitle,
     updateTabInput,
-    sendMessage
+    sendMessage,
+    loading
   } = useTabs()
+
+  if (loading) {
+    return (
+      <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <div>Loading...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="app">
