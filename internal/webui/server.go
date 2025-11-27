@@ -18,6 +18,9 @@ func Start(distFiles embed.FS, port int, openBrowser bool) error {
 		return fmt.Errorf("failed to access embedded files: %w", err)
 	}
 
+	// Register API endpoints
+	http.HandleFunc("/api/chat", HandleChat)
+
 	// Serve embedded files
 	http.Handle("/", http.FileServer(http.FS(distFS)))
 
@@ -56,4 +59,3 @@ func openURL(url string) {
 		fmt.Printf("Failed to open browser: %v\nPlease open: %s\n", err, url)
 	}
 }
-

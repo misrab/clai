@@ -24,4 +24,3 @@ func init() {
 	webuiCmd.Flags().BoolVar(&webuiNoBrowser, "no-browser", false, "Don't auto-open browser")
 	rootCmd.AddCommand(webuiCmd)
 }
-
