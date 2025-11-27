@@ -1,4 +1,4 @@
-.PHONY: test build build-webui dev-webui run clean install \
+.PHONY: test build build-webui dev-webui dev-go dev run clean install \
 	release release-snapshot release-dry-run \
 	release-patch release-minor release-major release-version \
 	ensure-clean
@@ -21,6 +21,21 @@ build-webui:
 
 dev-webui:
 	@cd webui && npm install && npm run dev
+
+dev-go:
+	@echo "Starting Go backend with hot reload..."
+	@which air > /dev/null || (echo "Error: 'air' not found. Install it with: go install github.com/air-verse/air@latest" && exit 1)
+	@air
+
+dev:
+	@echo "Starting development environment..."
+	@echo "  - Go backend with hot reload (port 8080)"
+	@echo "  - React frontend with HMR (port 5173)"
+	@echo ""
+	@which air > /dev/null || (echo "Error: 'air' not found. Install it with: go install github.com/air-verse/air@latest" && exit 1)
+	@trap 'kill 0' EXIT; \
+	(cd webui && npm install && npm run dev) & \
+	air
 
 build: build-webui
 	@mkdir -p bin

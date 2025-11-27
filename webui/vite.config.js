@@ -9,4 +9,13 @@ export default defineConfig({
     assetsDir: 'assets',
   },
   base: './', // Use relative paths for embedded serving
+  server: {
+    proxy: {
+      // Proxy API requests to Go backend during development
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
 })

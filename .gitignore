@@ -39,3 +39,7 @@ bin/
 # Web UI build artifacts
 webui/dist/
 webui/node_modules/
+
+# Air (hot reload) artifacts
+tmp/
+build-errors.log
