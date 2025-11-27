@@ -35,3 +35,7 @@ go.work.sum
 # GoReleaser output
 dist/
 bin/
+
+# Web UI build artifacts
+webui/dist/
+webui/node_modules/

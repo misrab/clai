@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"embed"
 	"fmt"
 	"os"
 
@@ -12,12 +13,20 @@ var (
 	useDummy        bool
 	maxPromptLength int
 
+	// webuiAssets holds the embedded web UI files
+	webuiAssets embed.FS
+
 	rootCmd = &cobra.Command{
 		Use:   "clai",
 		Short: "CLI for local AI",
 		Long:  "clai - Use local AI for bash command generation and chat",
 	}
 )
+
+// SetWebuiAssets sets the embedded web UI assets
+func SetWebuiAssets(assets embed.FS) {
+	webuiAssets = assets
+}
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&aiModel, "model", "codellama:7b", "Ollama model to use")

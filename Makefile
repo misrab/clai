@@ -1,4 +1,4 @@
-.PHONY: test build run clean install \
+.PHONY: test build build-webui dev-webui run clean install \
 	release release-snapshot release-dry-run \
 	release-patch release-minor release-major release-version \
 	ensure-clean
@@ -15,19 +15,27 @@ LOAD_RELEASE_ENV = if [ -f .env.release ]; then \
 test:
 	go test ./...
 
-build:
+build-webui:
+	@echo "Building web UI..."
+	@cd webui && npm install && npm run build
+
+dev-webui:
+	@cd webui && npm install && npm run dev
+
+build: build-webui
 	@mkdir -p bin
 	go build -o bin/clai .
 
 run: build
 	./bin/clai $(ARGS)
 
-install:
+install: build-webui
 	go install .
 
 clean:
 	rm -f bin/clai
 	rm -rf dist
+	rm -rf webui/dist
 
 # Release commands (requires goreleaser to be installed)
 # Install goreleaser: brew install goreleaser/tap/goreleaser
