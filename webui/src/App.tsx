@@ -24,8 +24,46 @@ function App() {
 
   if (loading) {
     return (
-      <div className="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <div>Loading...</div>
+      <div className="app">
+        {/* Sidebar skeleton */}
+        <div className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
+          <div className="sidebar-content">
+            <button className="collapse-btn" disabled>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+            <nav>
+              <div className="nav-item active" style={{ opacity: 0.5 }}>
+                <span className="nav-icon">
+                  <MessageSquare size={18} />
+                </span>
+                <span className="nav-label">Chats</span>
+              </div>
+            </nav>
+          </div>
+        </div>
+
+        {/* Main content skeleton */}
+        <div className={`main ${isCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}`}>
+          <header className="top-bar">
+            <div className="app-title">clai</div>
+          </header>
+          
+          {/* Loading indicator */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            height: 'calc(100vh - 60px)',
+            flexDirection: 'column',
+            gap: '16px',
+            color: 'var(--text-secondary)'
+          }}>
+            <div className="spinner" />
+            <div>Loading your chats...</div>
+          </div>
+        </div>
       </div>
     )
   }

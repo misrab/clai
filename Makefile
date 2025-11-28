@@ -34,8 +34,9 @@ dev:
 	@echo ""
 	@which air > /dev/null || (echo "Error: 'air' not found. Install it with: go install github.com/air-verse/air@latest" && exit 1)
 	@trap 'kill 0' EXIT; \
-	(cd webui && npm install && npm run dev) & \
-	air
+	air & \
+	sleep 2 && \
+	(cd webui && npm install && npm run dev)
 
 build: build-webui
 	@mkdir -p bin

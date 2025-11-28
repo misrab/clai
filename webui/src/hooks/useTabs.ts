@@ -13,7 +13,7 @@ export function useTabs() {
     loadChats()
   }, [])
 
-  const loadChats = async () => {
+  const loadChats = async (retryCount = 0) => {
     try {
       const chatList = await api.listChats()
       
@@ -42,9 +42,19 @@ export function useTabs() {
         // Load messages for the first tab
         loadChatMessages(loadedTabs[0].id)
       }
+      setLoading(false)
     } catch (error) {
       console.error('Failed to load chats:', error)
-      // Fallback to a default chat
+      
+      // Retry up to 3 times if it's a connection error (backend not ready)
+      if (retryCount < 3 && error instanceof TypeError) {
+        console.log(`Backend not ready, retrying in 2 seconds... (attempt ${retryCount + 1}/3)`)
+        setTimeout(() => loadChats(retryCount + 1), 2000)
+        return
+      }
+      
+      // Fallback to a default chat after retries exhausted
+      console.log('Creating fallback chat...')
       const newId = generateId()
       setTabs([{
         id: newId,
@@ -53,7 +63,6 @@ export function useTabs() {
         input: ''
       }])
       setActiveTabId(newId)
-    } finally {
       setLoading(false)
     }
   }

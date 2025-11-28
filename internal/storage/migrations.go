@@ -94,4 +94,3 @@ func runMigrations(db *sql.DB) error {
 
 	return nil
 }
-
