@@ -62,14 +62,21 @@ export const api = {
     if (!response.ok) throw new Error('Failed to delete chat')
   },
 
-  // Add a message to a chat
-  async createMessage(chatId: string, message: Message): Promise<Message> {
-    const response = await fetch(`${API_BASE}/chats/${chatId}/messages`, {
+  // Send a user message and get AI response (saves user message, calls Ollama, saves AI response)
+  async sendMessage(chatId: string, userMessageId: string, content: string, model?: string): Promise<Message> {
+    const response = await fetch(`${API_BASE}/chats/${chatId}/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message)
+      body: JSON.stringify({ 
+        userMessageId, 
+        content,
+        ...(model && { model })
+      })
     })
-    if (!response.ok) throw new Error('Failed to create message')
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to send message')
+    }
     return response.json()
   }
 }

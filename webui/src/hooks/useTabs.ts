@@ -159,11 +159,14 @@ export function useTabs() {
     const tab = tabs.find(t => t.id === tabId)
     if (!tab || !tab.input.trim()) return
 
+    const userMessageId = generateId()
     const userMessage: Message = {
-      id: generateId(),
+      id: userMessageId,
       role: 'user',
       content: tab.input
     }
+
+    const messageContent = tab.input
 
     // Add user message to local state and clear input
     setTabs(prevTabs => prevTabs.map(t => 
@@ -177,30 +180,21 @@ export function useTabs() {
     ))
 
     try {
-      // Save user message to backend
-      await api.createMessage(tabId, userMessage)
-
-      // TODO: Call AI API and add assistant response
-      // For now, just simulate a response
-      setTimeout(async () => {
-        const assistantMessage: Message = {
-          id: generateId(),
-          role: 'assistant',
-          content: 'This is a simulated response. AI integration coming soon!'
-        }
-        
-        // Add to local state
-        addMessage(tabId, assistantMessage)
-        
-        // Save to backend
-        try {
-          await api.createMessage(tabId, assistantMessage)
-        } catch (error) {
-          console.error('Failed to save assistant message:', error)
-        }
-      }, 500)
+      // Send message to backend - this will save user message, call Ollama, and return assistant response
+      const assistantMessage = await api.sendMessage(tabId, userMessageId, messageContent)
+      
+      // Add assistant response to local state
+      addMessage(tabId, assistantMessage)
     } catch (error) {
-      console.error('Failed to save user message:', error)
+      console.error('Failed to send message:', error)
+      
+      // Show error message to user
+      const errorMessage: Message = {
+        id: generateId(),
+        role: 'assistant',
+        content: `Error: ${error instanceof Error ? error.message : 'Failed to get AI response. Make sure Ollama is running.'}`
+      }
+      addMessage(tabId, errorMessage)
     }
   }
 

@@ -9,6 +9,9 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/misrab/clai/internal/storage"
 )
 
@@ -27,13 +30,34 @@ func Start(distFiles embed.FS, port int, openBrowser bool) error {
 		return fmt.Errorf("failed to access embedded files: %w", err)
 	}
 
-	// Register API endpoints
-	http.HandleFunc("/api/chat", HandleChat)
-	http.HandleFunc("/api/chats", chatHandler(store))
-	http.HandleFunc("/api/chats/", chatHandler(store))
+	// Create chi router
+	r := chi.NewRouter()
+
+	// Middleware
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type"},
+		AllowCredentials: false,
+	}))
+
+	// API routes
+	r.Route("/api/chats", func(r chi.Router) {
+		r.Get("/", HandleListChats(store))
+		r.Post("/", HandleCreateChat(store))
+
+		r.Route("/{id}", func(r chi.Router) {
+			r.Get("/", HandleGetChat(store))
+			r.Put("/", HandleUpdateChat(store))
+			r.Delete("/", HandleDeleteChat(store))
+			r.Post("/send", HandleSendMessage(store))
+		})
+	})
 
 	// Serve embedded files
-	http.Handle("/", http.FileServer(http.FS(distFS)))
+	r.Handle("/*", http.FileServer(http.FS(distFS)))
 
 	addr := fmt.Sprintf("localhost:%d", port)
 	url := fmt.Sprintf("http://%s", addr)
@@ -49,7 +73,7 @@ func Start(distFiles embed.FS, port int, openBrowser bool) error {
 	}
 
 	fmt.Println("Press Ctrl+C to stop")
-	return http.ListenAndServe(":"+fmt.Sprintf("%d", port), nil)
+	return http.ListenAndServe(":"+fmt.Sprintf("%d", port), r)
 }
 
 // openURL opens a URL in the default browser

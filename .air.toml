@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
   args_bin = ["webui", "--port", "8080", "--no-browser"]
-  bin = "./tmp/main"
+  entrypoint = "./tmp/main"
   cmd = "go build -o ./tmp/main ."
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "webui/node_modules", "webui/dist", "dist"]
