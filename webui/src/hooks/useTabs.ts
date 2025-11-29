@@ -167,6 +167,7 @@ export function useTabs() {
     }
 
     const messageContent = tab.input
+    const assistantMessageId = generateId()
 
     // Add user message to local state and clear input
     setTabs(prevTabs => prevTabs.map(t => 
@@ -179,22 +180,55 @@ export function useTabs() {
         : t
     ))
 
+    // Add empty assistant message placeholder for streaming
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: ''
+    }
+    addMessage(tabId, assistantMessage)
+
     try {
-      // Send message to backend - this will save user message, call Ollama, and return assistant response
-      const assistantMessage = await api.sendMessage(tabId, userMessageId, messageContent)
-      
-      // Add assistant response to local state
-      addMessage(tabId, assistantMessage)
+      // Send message and handle streaming chunks
+      await api.sendMessage(
+        tabId, 
+        userMessageId, 
+        messageContent,
+        (chunk: string) => {
+          // Update assistant message with new chunk
+          setTabs(prevTabs => prevTabs.map(t => {
+            if (t.id !== tabId) return t
+            
+            return {
+              ...t,
+              messages: t.messages.map(m => 
+                m.id === assistantMessageId
+                  ? { ...m, content: m.content + chunk }
+                  : m
+              )
+            }
+          }))
+        }
+      )
     } catch (error) {
       console.error('Failed to send message:', error)
       
-      // Show error message to user
-      const errorMessage: Message = {
-        id: generateId(),
-        role: 'assistant',
-        content: `Error: ${error instanceof Error ? error.message : 'Failed to get AI response. Make sure Ollama is running.'}`
-      }
-      addMessage(tabId, errorMessage)
+      // Replace placeholder with error message
+      setTabs(prevTabs => prevTabs.map(t => {
+        if (t.id !== tabId) return t
+        
+        return {
+          ...t,
+          messages: t.messages.map(m => 
+            m.id === assistantMessageId
+              ? { 
+                  ...m, 
+                  content: `Error: ${error instanceof Error ? error.message : 'Failed to get AI response. Make sure Ollama is running.'}`
+                }
+              : m
+          )
+        }
+      }))
     }
   }
 

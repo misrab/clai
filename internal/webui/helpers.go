@@ -59,18 +59,18 @@ func validateRequired(fields map[string]string) error {
 }
 
 // setupSSE configures response headers for Server-Sent Events
-// func setupSSE(w http.ResponseWriter) {
-// 	w.Header().Set("Content-Type", "text/event-stream")
-// 	w.Header().Set("Cache-Control", "no-cache")
-// 	w.Header().Set("Connection", "keep-alive")
-// }
+func setupSSE(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+}
 
-// // writeSSE writes data in SSE format
-// func writeSSE(w http.ResponseWriter, data interface{}) error {
-// 	jsonData, err := json.Marshal(data)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	fmt.Fprintf(w, "data: %s\n\n", jsonData)
-// 	return nil
-// }
+// writeSSE writes data in SSE format
+func writeSSE(w http.ResponseWriter, data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(w, "data: %s\n\n", jsonData)
+	return nil
+}

@@ -62,8 +62,14 @@ export const api = {
     if (!response.ok) throw new Error('Failed to delete chat')
   },
 
-  // Send a user message and get AI response (saves user message, calls Ollama, saves AI response)
-  async sendMessage(chatId: string, userMessageId: string, content: string, model?: string): Promise<Message> {
+  // Send a user message and get AI response via SSE streaming
+  async sendMessage(
+    chatId: string, 
+    userMessageId: string, 
+    content: string,
+    onChunk: (chunk: string) => void,
+    model?: string
+  ): Promise<Message> {
     const response = await fetch(`${API_BASE}/chats/${chatId}/send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -73,11 +79,56 @@ export const api = {
         ...(model && { model })
       })
     })
+
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Failed to send message')
+      throw new Error('Failed to send message')
     }
-    return response.json()
+
+    // Handle SSE stream
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+    
+    if (!reader) {
+      throw new Error('No response body')
+    }
+
+    let assistantMessage: Message | null = null
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      const chunk = decoder.decode(value)
+      const lines = chunk.split('\n')
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = JSON.parse(line.slice(6))
+          
+          if (data.error) {
+            throw new Error(data.error)
+          }
+          
+          if (data.chunk) {
+            onChunk(data.chunk)
+          }
+          
+          if (data.done && data.content) {
+            assistantMessage = {
+              id: data.id,
+              role: 'assistant',
+              content: data.content
+            }
+          }
+        }
+      }
+    }
+
+    if (!assistantMessage) {
+      throw new Error('No assistant message received')
+    }
+
+    return assistantMessage
   }
 }
 

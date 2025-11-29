@@ -145,8 +145,15 @@ func HandleDeleteChat(store *storage.Store) http.HandlerFunc {
 	}
 }
 
+// sendMessageRequest represents the request body for sending a message
+type sendMessageRequest struct {
+	UserMessageID string `json:"userMessageId"`
+	Content       string `json:"content"`
+	Model         string `json:"model,omitempty"`
+}
+
 // HandleSendMessage handles POST /api/chats/{id}/send
-// This endpoint saves the user message, gets AI response from Ollama, and saves the assistant response
+// Saves user message, gets AI response from Ollama, and streams or returns the response
 func HandleSendMessage(store *storage.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		chatID := getURLParam(r, "id")
@@ -155,12 +162,7 @@ func HandleSendMessage(store *storage.Store) http.HandlerFunc {
 			return
 		}
 
-		var req struct {
-			UserMessageID string `json:"userMessageId"`
-			Content       string `json:"content"`
-			Model         string `json:"model,omitempty"`
-		}
-
+		var req sendMessageRequest
 		if err := decodeJSON(r, &req); err != nil {
 			respondError(w, http.StatusBadRequest, err.Error())
 			return
@@ -194,30 +196,119 @@ func HandleSendMessage(store *storage.Store) http.HandlerFunc {
 			model = "codellama:7b"
 		}
 
-		// Get AI response from Ollama (non-streaming for simplicity)
-		client := ai.NewClient(model)
-		aiResponse, err := client.Chat(req.Content)
-		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
-			return
+		// Server decides whether to stream (default: always stream for now)
+		if shouldStream(req.Content) {
+			handleStreamingResponse(w, r, chatID, req.Content, model, store)
+		} else {
+			handleNonStreamingResponse(w, chatID, req.Content, model, store)
 		}
-
-		// Save assistant message
-		assistantMessage := &storage.Message{
-			ID:        generateMessageID(),
-			ChatID:    chatID,
-			Role:      "assistant",
-			Content:   aiResponse,
-			CreatedAt: time.Now(),
-		}
-
-		if err := store.CreateMessage(assistantMessage); err != nil {
-			respondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to save assistant message: %v", err))
-			return
-		}
-
-		respondJSON(w, http.StatusCreated, assistantMessage)
 	}
+}
+
+// shouldStream determines if the response should be streamed
+// For now, always returns true. In the future, can check content type, metadata, etc.
+func shouldStream(content string) bool {
+	// Future logic:
+	// - Check if response will contain HTML/attachments -> return false
+	// - Check if it's a code generation request -> return true
+	// - Check message metadata/flags -> return accordingly
+	return true
+}
+
+// handleStreamingResponse streams the AI response using SSE
+func handleStreamingResponse(w http.ResponseWriter, r *http.Request,
+	chatID, content, model string, store *storage.Store) {
+
+	setupSSE(w)
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		respondError(w, http.StatusInternalServerError, "Streaming not supported")
+		return
+	}
+
+	client := ai.NewClient(model)
+	assistantID := generateMessageID()
+	var fullResponse string
+
+	// Stream chunks to client and accumulate full response
+	err := client.ChatStream(content, func(chunk string) error {
+		// Check if client disconnected
+		if r.Context().Err() != nil {
+			return fmt.Errorf("client disconnected")
+		}
+
+		fullResponse += chunk
+
+		// Send chunk via SSE
+		if err := writeSSE(w, map[string]interface{}{
+			"id":    assistantID,
+			"chunk": chunk,
+			"done":  false,
+		}); err != nil {
+			return err
+		}
+		flusher.Flush()
+		return nil
+	})
+
+	if err != nil {
+		writeSSE(w, map[string]interface{}{
+			"error": err.Error(),
+			"done":  true,
+		})
+		flusher.Flush()
+		return
+	}
+
+	// Save complete message to DB
+	assistantMessage := &storage.Message{
+		ID:        assistantID,
+		ChatID:    chatID,
+		Role:      "assistant",
+		Content:   fullResponse,
+		CreatedAt: time.Now(),
+	}
+
+	if err := store.CreateMessage(assistantMessage); err != nil {
+		fmt.Printf("Failed to save assistant message: %v\n", err)
+	}
+
+	// Send final event with full message
+	writeSSE(w, map[string]interface{}{
+		"id":      assistantID,
+		"content": fullResponse,
+		"done":    true,
+	})
+	flusher.Flush()
+}
+
+// handleNonStreamingResponse returns the complete AI response at once
+func handleNonStreamingResponse(w http.ResponseWriter,
+	chatID, content, model string, store *storage.Store) {
+
+	client := ai.NewClient(model)
+	aiResponse, err := client.Chat(content)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Save assistant message
+	assistantMessage := &storage.Message{
+		ID:        generateMessageID(),
+		ChatID:    chatID,
+		Role:      "assistant",
+		Content:   aiResponse,
+		CreatedAt: time.Now(),
+	}
+
+	if err := store.CreateMessage(assistantMessage); err != nil {
+		respondError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to save assistant message: %v", err))
+		return
+	}
+
+	respondJSON(w, http.StatusCreated, assistantMessage)
 }
 
 // generateMessageID generates a random message ID
